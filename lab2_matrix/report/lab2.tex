@@ -1,0 +1,590 @@
+\documentclass[a4paper, 14pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{url}
+\usepackage{tikz}
+\usepackage{float}
+
+\usepackage{titlesec}
+\titleformat*{\section}{\LARGE\bfseries}
+\titleformat*{\subsection}{\Large\bfseries}
+\titleformat*{\subsubsection}{\large\bfseries}
+\titleformat*{\paragraph}{\large\bfseries}
+\titleformat*{\subparagraph}{\large\bfseries}
+
+\lstset{ 
+language=c++,                
+basicstyle=\small\sffamily, 
+numbers=left,  
+numberstyle=\tiny,
+stepnumber=1, 
+numbersep=5pt,
+showspaces=false, 
+showstringspaces=false,
+showtabs=false, 
+frame=single, 
+tabsize=2,  
+captionpos=t, 
+breaklines=true, 
+breakatwhitespace=false, 
+escapeinside={\#*}{*)} 
+}
+
+\begin{document}
+
+\begin{titlepage}
+	\centering
+	{\scshape\Large Лабораторная работа №2\par}
+	{\scshape\Large По курсу: "Анализ алгоритмов"\par}
+	{\scshape\Large По теме: "Умножение матриц"\par}
+	\vspace{7cm}
+	\Large Студент: Кондрашова О.П.\par
+	\Large Группа: ИУ7-55Б\par
+	\Large Преподаватели:  Волкова Л.Л., Строганов Ю.В.\par
+
+	\vfill
+	\large \textit {Москва, 2019} \par
+	
+\end{titlepage}
+
+	\setcounter{page}{2}
+	\tableofcontents
+	
+	\newpage
+	\section*{Введение}
+	
+	\addcontentsline{toc}{section}{Введение}
+	
+		 В данной лабораторной работе рассматривается стандартный алгоритм умножения матриц, алгоритм Винограда и модифицированный алгоритм Винограда. \\
+		 
+		 
+	Цели работы:
+\begin{enumerate}
+	\item изучение трудоемкости алгоритмов умножения матриц и получение ее оценок;
+	\item получение навыка оптимизации алгоритма с целью снижения трудоемкости его выполнения на примере решения задачи умножения матриц;
+	\item экспериментальное подтверждение оценок трудоемкости.
+\end{enumerate}
+
+	
+	\newpage
+	\section{Аналитическая часть}
+	
+	В данной части будут рассмотрены теоретические основы алгоритмова, а также составлена модель для вычисления трудоемкости..
+	
+	\subsection{Описание алгоритмов}
+	
+	Умножение матриц — одна из основных операций над матрицами. Матрица, получаемая в результате операции умножения, называется произведением матриц. Операция умножения двух матриц выполнима только в том случае, если число столбцов в первом сомножителе равно числу строк во втором; в этом случае говорят, что матрицы согласованы. В частности, умножение всегда выполнимо, если оба сомножителя — квадратные матрицы одного и того же порядка. Таким образом, из существования произведения AB вовсе не следует существование произведения BA.
+
+Эти алгоритмы активно применяются во всех областях, применяющие линейную алгебру, такие как:
+\begin{enumerate}
+	\item экономика;
+	\item физика;
+	\item компьютерная графика.
+\end{enumerate}
+
+	
+	\subsection{Стандартный алгоритм}
+	Матрицей называют математический объект, эквивалентный двумерному массиву. Матрица является прямоугольной (в частных случаях – квадратной) таблицей, совокупностью строк и столбцов, на пересечении которых находятся элементы матрицы. Количество строк и столбцов является размерностью матриц. Для матриц определена операция умножения.\\
+	
+	Пусть даны две матрицы – матрица А размером m на n:
+
+\[ \begin{bmatrix}
+a_{1,1} & ... & a_{1,n} \\
+... & ... & ... \\
+a_{m,1} & ... & a_{m,n} \\
+\end{bmatrix} \]\\
+	
+	и матрица B размером n на l:
+
+\[ \begin{bmatrix}
+b_{1,1} & ... & b_{1,l} \\
+... & ... & ... \\
+b_{n,1} & ... & b_{n,l} \\
+\end{bmatrix} \]\\
+
+	Матрица C:
+	
+\[ \begin{bmatrix}
+c_{1,1} & ... & c_{1,l} \\
+... & ... & ... \\
+c_{m,1} & ... & c_{m,1} \\
+\end{bmatrix} \]\\
+
+При этом:\\
+
+$c_{i,j} = \sum\limits_{r=1}^n a_{i,r}\cdot b_{r,j}$ называется произведением матриц A и B.
+
+Стандартный алгоритм умножений матриц А и В выполняет $ m \cdot n \cdot l $  умножений и $ m \cdot (n - 1) \cdot l $ сложений.\\
+
+Несмотря на очевидность и простоту, данный алгоритм не является «минимальным». Для более эффективного умножения матриц был разработан алгоритм Винограда.
+
+	\subsection{Алгоритм Винограда}
+	
+Очевидно, что каждый $c_{i,j}$ в результирующей матрице является скалярным произведением соответствующих столбца и строки. Такое умножение допускает предварительное вычисление части результата.
+Имеются два вектора: $V = (v1, v2, v3, v4)$  и $W = (w1, w2, w3, w4)$.\\
+
+Стандартное» перемножение:\\
+$ V \cdot W=v_1 \cdot w_1 + v_2 \cdot w_2 + v_3 \cdot w_3 + v_4 \cdot w_4$ \\
+
+Перемножение по Винограду:\\
+$V \cdot W=(v_1 + w_2) \cdot (v_2 + w_1) + (v_3 + w_4) \cdot (v_4 + w_3) - v_1 \cdot v_2 - v_3 \cdot v_4 - w_1 \cdot w_2 - w_3 \cdot w_4$\\
+
+	Данный алгоритм позволяет выполнить предварительную обработку матрицы и запомнить значения для каждой строки/столбца матриц. 
+	
+	Над предварительно обработанными элементами нам придется выполнять лишь первые два умножения и последующие пять сложений, а также дополнительно два сложения. 
+	
+	\subsection{Модель вычислений}
+	
+	В рамках данной работы используется следующая модель вычислений:
+	
+\begin{enumerate}
+  	\item Базовые операции имеют трудоемкость 1 (<, >, =, <=, =>, ==, +, -, *, /);
+	\item Оператор if имеет трудоемкость, равную трудоемкости тела оператора;
+	\item Оператор for имеет трудоемкость  $F_{for} = 2 + N \cdot (F_{body} + F_{cheсk})$, где $F_{body}$ – трудоемкость операций в теле цикла, а $F_{check}$ – трудоемкость проверки условия.
+\end{enumerate}
+	
+	\subsection{Вывод}
+	Были рассмотрены поверхностно алгоритмы классического умножения матриц и алгоритм Винограда, принципиальная разница которого — наличие предварительной обработки, а также уменьшение количества операций умножения.
+	
+	\newpage
+	\section{Конструкторская часть}
+	
+	В данной части будут изложены математические основы алгоритмов.
+	
+	\subsection{Схемы алгоритмов}
+	
+	Схема стандартного алгоритма:
+		\begin{figure}[H]
+        	\begin{center}
+        		{\includegraphics[scale = 0.5]{cmult}}
+        		\caption{Стандартный алгоритм}
+        	\end{center}
+        \end{figure}
+	
+	\newpage
+	Схема алгоритма Винограда:
+	\begin{figure}[H]
+        	\begin{center}
+        		{\includegraphics[scale = 0.37]{v}}
+        		\caption{Алгоритм Винограда}
+        	\end{center}
+        \end{figure}
+	
+	\newpage
+	Схема оптимизированного алгоритма Виноградова:
+			
+	\begin{figure}[H]
+        	\begin{center}
+        		{\includegraphics[scale = 0.31]{vo}}
+        		\caption{Оптимизированный алгоритм Винограда}
+        	\end{center}
+        \end{figure}
+	
+	\subsection{Вывод}
+	
+	В данной части были рассмотрены схемы алгоритмов.
+
+	\newpage
+	\section{Технологическая часть}
+	
+	В этом разделе будут изложены требования к программному обеспечению и листинги алгоритмов.
+	
+	\subsection{Требования к программному обеспечению}
+	Входные данные: matr1 - первая матриц, matr2 - вторая матрица.
+	Выходные данные: произведение двух матриц.
+
+	\begin{figure}[H]
+        	\begin{center}
+        		{\includegraphics[scale = 0.5]{def2}}
+        		\caption{IDEF0 диаграмма умножения двух матриц}
+        	\end{center}
+        \end{figure}
+	
+	\subsection{Средства реализации}
+	
+		Данная программа разработана на языке C++, поддерживаемом многими операционными системами. Проект выполнен в среде Xcode. \\
+		
+		В программе отсутствует проверка на ввод пустых или некорректных данных.\\
+	
+	Для замера процессорного времени используется функция, возвращающая количество тиков.
+	
+	\newpage
+	\begin{lstlisting}[label=some-code,caption=Функция замера количества тиков]
+unsigned long long tick()
+{
+    unsigned long long d;
+    __asm__ __volatile__ ("rdtsc" : "=A" (d));
+    return d;
+}
+\end{lstlisting}
+
+	\subsection{Оценка трудоемкости}
+
+Трудоемкость стандартного алгоритма: \\
+$F=2+N\cdot(2+2+M\cdot(2+2+K\cdot(2+8)))=10MNK+4NM+4N+2$ \\ \\
+Трудоемкость алгоритма Винограда:\\
+Лучший случай (m четное):  \\
+$F=2+6N+15N {{M}\over{2}} +2+6K+15M{{K}\over{2}} +2+2N+11NK+13MNK+2 =13MNK+7.5M(N+K)+11NK+8N+6K+8$\\
+Худший случай (m нечетное) $(int) m/2=(m-1)/2$:\\
+$F=2+6N+15N {{M-1}\over{2}}+2+6K+15(M-1){{K}\over{2}} +2+2N+11NK+26NK{{M-1}\over{2}}+2+4N+15NK=8N+12N+6K+(N+K)15{{M-1}\over{2}}+26NK+13NMK-13NK=13NMK+7.M(N+K)+13NK+4.5N-1.5K+8$\\ \\
+Трудоемкость оптимизированного алгоритма Винограда:\\
+Лучший случай (m четное) $mid=m/2$: \\
+$F=mid(8+9N+9K)+3+4N+12NK+16NK \cdot mid=3+4N+12NK+mid(8+9N+9K+16NK)=3+4N+12NK+0.5M(8+9N+9K+16NK)=8MNK+4.5MK+12NK+4M+4N+3$\\
+ Худший случай (m нечетное) $mid=(m-1)/2$:: \\
+ $F=mid(8+9N+9K)+3+4N+18NK+16NK \cdot mid=3+4N+18NK+mid(8+9N+9K+16NK)=3+4N+18NK+{{M-1}\over{2}}\cdot(8+9N+9K+16NK)=3+4N+18NK+4M+4.5NM+4.5MK+8MNK-4-4.5N-4.5K-8NK=8MNK+4.5NM+4.5MK+10NK+0.75N-2.25K+4M-1$
+
+\newpage
+\subsection{Листинги функций}
+
+Ниже приведены листинги функций, реализующих алгоритмы умножения.
+\begin{lstlisting}[label=some-code,caption=Стандартный алгоритм]
+Matrix Matrix::classic_mult(const Matrix &mtr1, const Matrix &mtr2)
+{
+    Matrix res(mtr1.row, mtr2.column);
+
+    for (int i = 0; i < mtr1.row; ++i)
+    {
+        for (int j = 0; j < mtr2.column; ++j)
+        {
+            data[i][j] = 0;
+            for (int k = 0; k < mtr2.column; ++k)
+            {
+                res.data[i][j] = res.data[i][j] + mtr1.data[i][k] * mtr2.data[k][j];
+            }
+        }
+    }
+
+    return res;
+}
+\end{lstlisting}
+
+	\begin{lstlisting}[label=some-code,caption=Алгоритм Винограда]
+Matrix Matrix::vinograd_mult(const Matrix &mtr1, const Matrix &mtr2)
+{
+    Matrix res(mtr1.row, mtr2.column);
+
+    int row_factor[mtr1.row];
+    int col_factor[mtr2.column];
+
+    for(int i = 0; i < mtr1.row; i++)
+    {
+        row_factor[i] = 0;
+        for(int j = 0; j < mtr1.column / 2; j++)
+        {
+            row_factor[i] = row_factor[i] + mtr1.data[i][2 * j] * mtr1.data[i][2 * j + 1];
+        }
+    }
+
+    for(int i = 0; i < mtr2.column; i++)
+    {
+        col_factor[i] = 0;
+        for(int j = 0; j < mtr2.row / 2; j++)
+        {
+            col_factor[i] = col_factor[i] + mtr2.data[2 * j][i] * mtr2.data[2 * j + 1][i];
+        }
+    }
+
+    for(int i = 0; i < mtr1.row; i++)
+    {
+        for(int j = 0; j < mtr2.column; j++)
+        {
+            res.data[i][j] = -row_factor[i] - col_factor[j];
+            for(int k = 0; k < mtr1.column / 2; k++)
+            {
+                res.data[i][j] = res.data[i][j] +
+                                    (mtr1.data[i][2 * k + 1] + mtr2.data[2 * k][j]) *
+                                    (mtr1.data[i][2 * k] + mtr2.data[2 * k + 1][j]);
+            }
+        }
+    }
+    
+    if(mtr1.column % 2)
+    {
+        for(int i = 0; i < mtr1.row; i++)
+            for(int j = 0; j < mtr2.column; j++)
+                res.data[i][j] = res.data[i][j] + mtr1.data[i][mtr1.column - 1] * mtr2.data[mtr1.column - 1][j];
+    }
+
+    return res;
+}
+\end{lstlisting}
+
+	\newpage
+	\begin{lstlisting}[label=some-code,caption=Оптимизированный алгоритм Винограда]
+Matrix Matrix::vinograd_mult_optm(const Matrix &mtr1, const Matrix &mtr2)
+{
+    int ind;
+    int tmp;
+    Matrix res(mtr1.row, mtr2.column);
+
+    int row_factor[mtr1.row];
+    int col_factor[mtr2.column];
+
+    int m1_min1 = mtr1.column - 1;
+
+    for(int i = 0; i < mtr1.row; i++)
+    {
+        row_factor[i] = mtr1.data[i][0] * mtr1.data[i][1];
+    }
+    for(int i = 0; i < mtr2.column; i++)
+    {
+        col_factor[i] = mtr2.data[0][i] * mtr2.data[1][i];
+    }
+
+    for(int j = 2; j < m1_min1; j += 2)
+    {
+        ind = j + 1;
+        for(int i = 0; i < mtr1.row; i++)
+        {
+            row_factor[i] += mtr1.data[i][j] * mtr1.data[i][ind];
+        }
+        for(int i = 0; i < mtr2.column; i++)
+        {
+            col_factor[i] += mtr2.data[j][i] * mtr2.data[ind][i];
+        }
+    }
+    
+    if(mtr1.column % 2)
+    {
+        for(int i = 0; i < mtr1.row; i++)
+        {
+            for(int j = 0; j < mtr2.column; j++)
+            {
+                tmp = -(row_factor[i] + col_factor[j]);
+                for(int k = 0; k < m1_min1; k += 2)
+                {
+                    tmp += (mtr1.data[i][k+1] + mtr2.data[k][j]) * (mtr1.data[i][k] + mtr2.data[k+1][j]);
+                }
+                tmp += mtr1.data[i][m1_min1] * mtr2.data[m1_min1][j];
+                res.data[i][j] = tmp;
+            }
+        }
+    }
+    
+    else
+    {
+        for(int i = 0; i < mtr1.row; i++)
+        {
+            for(int j = 0; j < mtr2.column; j++)
+            {
+                tmp = -(row_factor[i] + col_factor[j]);
+                for(int k = 0; k < m1_min1; k += 2)
+                {
+                    tmp += (mtr1.data[i][k+1] + mtr2.data[k][j]) * (mtr1.data[i][k] + mtr2.data[k+1][j]);
+                }
+                res.data[i][j] = tmp;
+            }
+        }
+    }
+
+    return res;
+}
+\end{lstlisting}
+
+	\subsection{Оптимизация алгоритма Винограда}
+	
+		Стандартный алгоритм Винограда может быть оптимизирован с помощью следующих модификаций:
+	
+	\begin{enumerate}
+	\item конструкции вида $a = a + c$ заменяются на конструкции вида $a += c$;
+	\begin{lstlisting}[label=some-code,caption=Составное присваивание]
+for (int i = 0; i <= first_matrix.rows; i++)
+    {
+        for (int j = 0; j <= (first_matrix.columns - m1_mod2); j += 2)
+        {
+            row_factor[i] += first_matrix.matrix[i][j] * first_matrix.matrix[i][j + 1];
+        }
+    }
+\end{lstlisting}
+	\item заранее вычисляем переменные и выражения, которые часто используются;
+	\begin{lstlisting}[label=some-code,caption=Вынос первой итерации из цикла]
+int m1_min1 = mtr1.column - 1;
+\end{lstlisting}
+
+\item внутри тройного цикла накапливать результат в буфер, а вне цикла сбрасывать буфер в ячейку памяти;
+\begin{lstlisting}[label=some-code,caption=Запись в буфер]
+if(mtr1.column % 2)
+    {
+        for(int i = 0; i < mtr1.row; i++)
+        {
+            for(int j = 0; j < mtr2.column; j++)
+            {
+                tmp = -(row_factor[i] + col_factor[j]);
+                for(int k = 0; k < m1_min1; k += 2)
+                {
+                    tmp += (mtr1.data[i][k + 1] + mtr2.data[k][j]) * (mtr1.data[i][k] + mtr2.data[k + 1][j]);
+                }
+                tmp += mtr1.data[i][m1_min1] * mtr2.data[m1_min1][j];
+                res.data[i][j] = tmp;
+            }
+        }
+    }
+\end{lstlisting}
+
+\item перенос вложенного цикла последнего цикла внутрь основного цикла для нечетных размерностей;
+\begin{lstlisting}[label=some-code,caption=Запись в буфер]
+else
+    {
+        for(int i = 0; i < mtr1.row; i++)
+        {
+            for(int j = 0; j < mtr2.column; j++)
+            {
+                tmp = -(row_factor[i] + col_factor[j]);
+                for(int k = 0; k < m1_min1; k += 2)
+                {
+                    tmp += (mtr1.data[i][k + 1] + mtr2.data[k][j]) * (mtr1.data[i][k] + mtr2.data[k + 1][j]);
+                }
+                res.data[i][j] = tmp;
+            }
+        }
+    }
+\end{lstlisting}
+	\end{enumerate}
+
+	\subsection{Вывод}
+	Так как оценка дается по самому быстрому растущему слагаемому, в нашем случае это куб линейного размера матриц. В классическом алгоритме коэффициент равен 10, у Винограда — 13, в улучшенном — 8. Можно сделать вывод о том, что улучшенный метод Винограда выигрывает по скорости работы у классического алгоритма умножения матриц.
+
+	\newpage
+	\section{Исследовательская часть}
+	В данной части представлены результаты  исследования быстродействия алгоритмов.\\
+
+	\subsection{Постановка эксперимента}
+	
+	Были проведены исследования зависимости времени работы трех алгоритмов от размеров перемножаемых матриц. Замеры времени проводились отдельно для матриц четной размерности и матриц нечетной размерности. Для эксперимента использовались матрицы размера от 100 до 1000 с шагом 100 для четной размерности и размера от 101 до 1001 с шагом 100 для нечетной размерности. Временные замеры проводятся путём многократного проведения эксперимента и деления результирующего времени на количество итераций эксперимента. \\
+	
+	\subsection{Матрицы четного размера}
+	
+	Время работы алгоритмов на матрицах четной размерности:
+	
+	\begin{figure}[H]
+	\begin{tikzpicture}
+	\begin{axis}[
+	    xlabel={Размер матрицы},
+	    ylabel={Время (тики)},
+	    xmin=100, xmax=1000,
+	    ymin=0, ymax=300000000,
+	    legend pos=north west,
+	    ymajorgrids=true,
+	    grid style=dashed,
+	]
+	 
+	\addplot[
+	    color=red,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,45504)(200,344852)(300,1626090)(400,4410053)(500,8809530)(600,15523926)(700,27314819)(800,36896674)(900,151438792)(1000,253111941)
+	    };
+	    
+	    \addplot[
+	    color=blue,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,50613)(200,254889)(300,1164803)(400,3277843)(500,6466829)(600,10441740)(700,20235150)(800,27982176)(900,115139281)(1000,199701561)
+	    };
+	    
+	    \addplot[
+	    color=green,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,22663)(200,189215)(300,937882)(400,2605948)(500,5077237)(600,9041331)(700,15047492)(800,20829956)(900,85256627)(1000,158414218)
+	    };
+	 
+\addlegendentry{Стандарт..}
+\addlegendentry{Виноград.}
+\addlegendentry{Опт. Виноград.}
+
+	\end{axis}
+	\end{tikzpicture}
+	\caption{График времени работы алгоритмов на матрицах четной размерности}
+	\end{figure}
+	
+	\newpage
+	\subsection{Матрицы нечетного размера}
+	
+	Время работы алгоритмов на матрицах нечетной размерности:
+	
+		\begin{figure}[H]
+		\begin{tikzpicture}
+	\begin{axis}[
+	    xlabel={Размер матрицы},
+	    ylabel={Время (тики)},
+	    xmin=101, xmax=1001,
+	    ymin=0, ymax=300000000,
+	    legend pos=north west,
+	    ymajorgrids=true,
+	    grid style=dashed,
+	]
+	 
+	\addplot[
+	    color=red,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (101,45393)(201,386372)(301,1557256)(401,4538718)(501,9009942)(601,15214595)(701,26603522)(801,37648086)(901,139235577)(1001,278285719)
+	    };
+	    
+	    \addplot[
+	    color=blue,
+	    mark=square,
+	    ]
+	    coordinates {
+	   (101,35265)(201,264594)(301,1113414)(401,3314034)(501,6511456)(601,11947585)(701,20274021)(801,26844301)(901,136919210)(1001,212082553)
+	    };
+	    
+	    \addplot[
+	    color=green,
+	    mark=square,
+	    ]
+	    coordinates {
+	   (101,38152)(201,196174)(301,919775)(401,2652528)(501,5171817)(601,10328122)(701,15001586)(801,20867237)(901,108043316)(1001,165932409)
+	    };
+	 
+\addlegendentry{Стандарт..}
+\addlegendentry{Виноград.}
+\addlegendentry{Опт. Виноград.}
+
+	\end{axis}
+	\end{tikzpicture}
+	\caption{График времени работы алгоритмов на матрицах нечетной размерности}
+	\end{figure}
+	
+	\subsection{Вывод}
+	
+	Алгоритм Виноградова начинает выигрывать в быстродействии у других алгоритмов только в случае, когда матрицы имеют размерность, не позволяющую хранить их целиком в памяти компьютера. Стандартный алгоритм умножения матриц работает дольше, чем среализация алгоритма Винограда, в то время как оптимизированная версия алгоритма Винограда работает быстрее их обоих.
+	
+	\newpage
+	\section*{Заключение}
+	
+	\addcontentsline{toc}{section}{Заключение}
+ 
+В данной работе были исследованы алгоритмы умножения матриц. Для каждого алгоритма была вычислена трудоемкость данного алгоритма в выбранной модели вычислений. Для реализации каждого алгоритма был произведен сравнительный анализ алгоритмов.
+
+	В ходе работы были получены следующие навыки:
+\begin{enumerate}
+	\item изучение и подсчет трудоемкости алгоритмов;
+	\item алгоритм Винограда был оптимизирован с целью снижения трудоемкости;
+	\item оценки трудоемкости были экспериментально подтверждены.
+\end{enumerate}
+
+\newpage
+\addcontentsline{toc}{section}{Список  литературы}
+
+\begin{thebibliography}{}
+    \bibitem{litlink1}  Дж. Макконнелл. Анализ алгоритмов. Активный обучающий подход.-М.:Техносфера, 2009.
+    \bibitem{lev_1} Henry Cohn, Robert Kleinberg, Balazs Szegedy, and Chris Umans. Group-theoretic Algorithms for Matrix Multiplication. arXiv:math.GR/0511460. Proceedings of the 46th Annual Symposium on Foundations of Computer Science, 23-25 October 2005, Pittsburgh, PA, IEEE Computer Society, pp. 379—388.. 
+    \bibitem{lev_2} Don Coppersmith and Shmuel Winograd. Matrix multiplication via arithmetic progressions. Journal of Symbolic Computation, 9:251-280, 1990.
+\end{thebibliography}
+	
+	\newpage
+	\bibliographystyle{alpha}
+	\bibliography{mybib}
+	
+\end{document}

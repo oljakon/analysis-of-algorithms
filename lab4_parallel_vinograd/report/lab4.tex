@@ -1,0 +1,620 @@
+\documentclass[a4paper, 14pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{url}
+\usepackage{tikz}
+\usepackage{float}
+
+\usepackage{titlesec}
+\titleformat*{\section}{\LARGE\bfseries}
+\titleformat*{\subsection}{\Large\bfseries}
+\titleformat*{\subsubsection}{\large\bfseries}
+\titleformat*{\paragraph}{\large\bfseries}
+\titleformat*{\subparagraph}{\large\bfseries}
+
+\lstset{ 
+language=c++,                
+basicstyle=\small\sffamily, 
+numbers=left,  
+numberstyle=\tiny,
+stepnumber=1, 
+numbersep=5pt,
+showspaces=false, 
+showstringspaces=false,
+showtabs=false, 
+frame=single, 
+tabsize=2,  
+captionpos=t, 
+breaklines=true, 
+breakatwhitespace=false, 
+escapeinside={\#*}{*)} 
+}
+
+\begin{document}
+
+\begin{titlepage}
+	\centering
+	{\scshape\Large Лабораторная работа №4\par}
+	{\scshape\Large По курсу: "Анализ алгоритмов"\par}
+	{\scshape\Large По теме: "Параллельное умножение матриц"\par}
+	\vspace{7cm}
+	\Large Студент: Кондрашова О.П.\par
+	\Large Группа: ИУ7-55Б\par
+	\Large Преподаватели:  Волкова Л.Л., Строганов Ю.В.\par
+
+	\vfill
+	\large \textit {Москва, 2019} \par
+	\end{titlepage}
+	
+	\setcounter{page}{2}
+	\tableofcontents
+	
+	\newpage
+	\section*{Введение}
+	
+	\addcontentsline{toc}{section}{Введение}
+	
+		 Целью данной работы является изучение и реализация параллельного алгоритма Винограда для умножения матриц. Необходимо сравнить зависимость времени работы алгоритма от числа параллельных потоков исполнения и размера матриц, провести сравнение стандартного и параллельного алгоритма.
+	
+	\newpage
+	\section{Аналитическая часть}
+	
+	В данной части будут рассмотрены теоретические основы алгоритмов.
+	
+	\subsection{Описание алгоритмов}
+	
+	Умножение матриц — одна из основных операций над матрицами. Матрица, получаемая в результате операции умножения, называется произведением матриц. Операция умножения двух матриц выполнима только в том случае, если число столбцов в первом сомножителе равно числу строк во втором; в этом случае говорят, что матрицы согласованы. В частности, умножение всегда выполнимо, если оба сомножителя — квадратные матрицы одного и того же порядка. Таким образом, из существования произведения AB вовсе не следует существование произведения BA.
+
+Эти алгоритмы активно применяются во всех областях, применяющие линейную алгебру, такие как:
+\begin{enumerate}
+	\item экономика;
+	\item физика;
+	\item компьютерная графика.
+\end{enumerate}
+
+	\newpage
+	\subsection{Алгоритм Винограда}
+	
+	Очевидно, что каждый $c_{i,j}$ в результирующей матрице является скалярным произведением соответствующих столбца и строки. Такое умножение допускает предварительное вычисление части результата.
+Имеются два вектора: $V = (v1, v2, v3, v4)$  и $W = (w1, w2, w3, w4)$.\\
+
+Стандартное» перемножение:\\
+$ V \cdot W=v_1 \cdot w_1 + v_2 \cdot w_2 + v_3 \cdot w_3 + v_4 \cdot w_4$ \\
+
+Перемножение по Винограду:\\
+$V \cdot W=(v_1 + w_2) \cdot (v_2 + w_1) + (v_3 + w_4) \cdot (v_4 + w_3) - v_1 \cdot v_2 - v_3 \cdot v_4 - w_1 \cdot w_2 - w_3 \cdot w_4$\\
+
+	Данный алгоритм позволяет выполнить предварительную обработку матрицы и запомнить значения для каждой строки/столбца матриц. 
+	
+	Над предварительно обработанными элементами нам придется выполнять лишь первые два умножения и последующие пять сложений, а также дополнительно два сложения. 
+	
+	\subsection{Параллельный алгоритм Винограда}
+	
+	Трудоемкость алгоритма Винограда имеет сложность $O(nmk)$ для умножения матриц $n1 \times m1$ на $n2 \times m2$. Чтобы улучшить алгоритм, следует распараллелить ту часть алгоритма, которая содержит 3 вложенных цикла.\\
+
+	Вычисление результата для каждой строки не зависит от результата выполнения умножения для других строк. Поэтому можно распараллелить часть кода, где происходят эти действия. Каждый поток будет выполнять вычисления определенных строк результирующей матрицы.
+	
+	\subsection{Распараллеливание задачи на CPU}
+	
+	В рамках данной лабораторной работы производилось распараллеливание задачи по потокам. В CPU для данной цели используются treads.  \\
+	
+	CPU – central processing unit – это универсальный процессор, также именуемый процессором общего назначения. Он оптимизирован для достижения высокой производительности единственного потока команд. Доступ к памяти с данными и инструкциями происходит преимущественно случайным образом.\\
+	
+	Для того, чтобы повысить производительность CPU еще больше, они проектируются специально таким образом, чтобы выполнять как можно больше инструкций параллельно. Например для этого в ядрах процессора используется блок внеочередного выполнения команд.\\
+	
+	Но несмотря на это, CPU все равно не в состоянии осуществить параллельное выполнение большого числа инструкций, так как расходы на распараллеливание инструкций внутри ядра оказываются очень существенными. Именно поэтому процессоры общего назначения имеют не очень большое количество исполнительных блоков.
+
+	
+	\subsection{Вывод}
+	Были рассмотрены поверхностно стандартная и параллельная реализации алгоритма Винограда. 
+	
+	\newpage
+	\section{Конструкторская часть}
+	
+	В данной части будут представлены схемы алгоритмов.
+
+	\subsection{Схемы алгоритмов}
+	
+	На рис. \ref{fig:sv} представлена схема стандартного алгоритма Винограда:
+	
+	\begin{figure}[H]
+        	\begin{center}
+        		\includegraphics[scale=0.35]{v2}
+        		\caption{Стандартный алгоритм Винограда}
+        		\label{fig:sv}
+        	\end{center}
+        \end{figure}
+
+	\newpage
+	На рис. \ref{fig:pv} представлена схема стандартного алгоритма Винограда:	
+	
+	\begin{figure}[H]
+        	\begin{center}
+        		\includegraphics[scale=0.39]{vp}
+        		\caption{Параллельный алгоритм Винограда}
+        		\label{fig:pv}
+        	\end{center}
+        \end{figure}
+	
+	\newpage
+	На рис. \ref{fig:func} представлена схема фнкции параллельного вычисления матрицы:
+	
+	\begin{figure}[H]
+        	\begin{center}
+        		\includegraphics[scale=0.42]{thread}
+        		\caption{Параллельное вычисление матрицы}
+        		\label{fig:func}
+        	\end{center}
+        \end{figure}
+	
+	\subsection{Вывод}
+	
+	В данной части были рассмотрены схемы алгоритмов.
+
+	\newpage
+	\section{Технологическая часть}
+	
+	В этом разделе будут изложены требования к программному обеспечению и листинги алгоритмов.
+	
+	\subsection{Требования к программному обеспечению}
+	Входные данные: matr1 - первая матриц, matr2 - вторая матрица.
+	Выходные данные: произведение двух матриц.\\
+	
+	На рис. \ref{fig:def} представлена IDEF0 диаграмма умножения двух матриц:
+	
+	\begin{figure}[H]
+        	\begin{center}
+        		\includegraphics[scale=0.5]{4}
+        		\caption{IDEF0 диаграмма умножения двух матриц}
+        		\label{fig:def}
+        	\end{center}
+        \end{figure}
+	
+	\subsection{Средства реализации}
+	
+		Данная программа разработана на языке C++, поддерживаемом многими операционными системами. Проект выполнен в среде Xcode. \\
+		
+		Для отключения оптимизации компилятора указан флаг «-o0».\\
+		
+		Для работы с потоками используется библиотека поддержки потоков std::thread. \\
+Наблюдатель joinable  проверяет потенциальную возможность работы потока в параллельном контексте.\\
+Операция join ожидает завершения потока.
+	
+\newpage
+\subsection{Листинги функций}
+
+В данном разделе представлены листинги реализованных алгоритмов.
+
+	В листинге \ref{s} представлен стандартный алгоритм Винограда:
+
+	\begin{lstlisting}[label=s,caption=Стандартный алгоритм Винограда]
+Matrix Matrix::vinograd_mult(const Matrix &mtr1, const Matrix &mtr2)
+{
+    Matrix res(mtr1.row, mtr2.column);
+
+    int row_factor[mtr1.row];
+    int col_factor[mtr2.column];
+
+    for(int i = 0; i < mtr1.row; i++)
+    {
+        row_factor[i] = 0;
+        for(int j = 0; j < mtr1.column / 2; j++)
+        {
+            row_factor[i] = row_factor[i] + mtr1.data[i][2 * j] * mtr1.data[i][2 * j + 1];
+        }
+    }
+
+    for(int i = 0; i < mtr2.column; i++)
+    {
+        col_factor[i] = 0;
+        for(int j = 0; j < mtr2.row / 2; j++)
+        {
+            col_factor[i] = col_factor[i] + mtr2.data[2 * j][i] * mtr2.data[2 * j + 1][i];
+        }
+    }
+
+    for(int i = 0; i < mtr1.row; i++)
+    {
+        for(int j = 0; j < mtr2.column; j++)
+        {
+            res.data[i][j] = -row_factor[i] - col_factor[j];
+            for(int k = 0; k < mtr1.column / 2; k++)
+            {
+                res.data[i][j] = res.data[i][j] +
+                                    (mtr1.data[i][2 * k + 1] + mtr2.data[2 * k][j]) *
+                                    (mtr1.data[i][2 * k] + mtr2.data[2 * k + 1][j]);
+            }
+        }
+    }
+    
+    if(mtr1.column % 2)
+    {
+        for(int i = 0; i < mtr1.row; i++)
+            for(int j = 0; j < mtr2.column; j++)
+                res.data[i][j] = res.data[i][j] + mtr1.data[i][mtr1.column - 1] * mtr2.data[mtr1.column - 1][j];
+    }
+
+    return res;
+}
+\end{lstlisting}
+
+	В листинге \ref{p} представлен параллельный алгоритм Винограда:\\
+	
+	Можно заметить, что вычисление результата для каждой строки происходит независимо от результата выполнения умножения для других строк. Поэтому возможно распараллелить участок кода, соответстующий строкам 24-32 листинга \ref{s}. Каждый поток будет выполнять вычисление некоторых строк результирующей матрицы. Это сделано потому, что проход по строкам матрицы является более эффективным с точки зрения организации данных в памяти.
+
+	\begin{lstlisting}[label=p,caption=Параллельный алгоритм Винограда]
+Matrix Matrix::vinograd_mult_parallel(const Matrix &mtr1, const Matrix &mtr2, int count)
+{
+    Matrix res(mtr1.row, mtr2.column);
+
+    int row_factor[mtr1.row];
+    int col_factor[mtr2.column];
+
+    for(int i = 0; i < mtr1.row; i++)
+    {
+        row_factor[i] = 0;
+        for(int j = 0; j < mtr1.column / 2; j++)
+        {
+            row_factor[i] = row_factor[i] + mtr1.data[i][2 * j + 1] * mtr1.data[i][2 * j];
+        }
+    }
+
+    for(int i = 0; i < mtr2.column; i++)
+    {
+        col_factor[i] = 0;
+        for(int j = 0; j < mtr1.column / 2; j++)
+        {
+            col_factor[i] = col_factor[i] + mtr2.data[2 * j + 1][i] * mtr2.data[2 * j][i];
+        }
+    }
+
+    std::thread threads[count];
+
+    for(int i = 0; i < count; i++)
+    {
+        threads[i] = std::thread(&func_thread, std::ref(mtr1), std::ref(mtr2), std::ref(res), &row_factor[0], &col_factor[0], i, count);
+    }
+    for(int i = 0; i < count; i++)
+    {
+        if(threads[i].joinable())
+        {
+            threads[i].join();
+        }
+    }
+
+
+    if(mtr1.column % 2 == 1)
+    {
+        for(int i = 0; i < mtr1.row; i++)
+            for(int j = 0; j < mtr2.column; j++)
+                res.data[i][j] = res.data[i][j] + mtr1.data[i][mtr1.column - 1] * mtr2.data[mtr1.column - 1][j];
+    }
+
+    return res;
+}
+\end{lstlisting}
+
+В листинге \ref{pf} представлено распараллеленное вычисление тройного цикла:
+
+	\begin{lstlisting}[label=pf,caption=Распараллеленный тройной цикл]
+void func_thread(const Matrix &mtr1, const Matrix &mtr2, Matrix &res,  int* row_factor,  int* col_factor, int num, int count)
+{
+    for(int i = num; i < mtr1.row; i += count)
+    {
+        for(int j = 0; j < mtr2.column; j++)
+        {
+            res.data[i][j] = -row_factor[i] - col_factor[j];
+            for(int k = 0; k < mtr1.column / 2; k++)
+            {
+                res.data[i][j] = res.data[i][j] + (mtr1.data[i][2*k+1] + mtr2.data[2*k][j]) *
+                        (mtr1.data[i][2*k] + mtr2.data[2*k+1][j]);
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+	\subsection{Вывод}
+	В данном разделе были представлены стандартный и параллельный алгоритмы Винограда.
+
+	\newpage
+	\section{Исследовательская часть}
+	В данной части представлены результаты  исследования быстродействия алгоритмов.\\
+
+	\subsection{Постановка эксперимента}
+	
+	Были проведены исследования зависимости времени работы трех алгоритмов от размеров перемножаемых матриц и количества использованных потоков. Замеры времени проводились для матриц четной размерности размером от 100 до 1000 с шагом 100 и матриц нечетной размерности размером от 101 до 1001 с шагом 100. Количество потоков - от 1 до 8, т.к. компьютер, на котором проводились вычисления, содержит 2 логических ядра.\\
+	
+	 Временные замеры проводятся путём многократного проведения эксперимента и деления результирующего времени на количество итераций эксперимента. \\
+	
+	\newpage
+	\subsection{Анализ времени работы}
+	
+	На рис. \ref{chet} представлен график времени работы алгоритма на матрицах четной размерности:
+	
+\begin{figure}[H]
+\begin{tikzpicture}
+\begin{axis}[
+	    xlabel={Размер матрицы},
+	    ylabel={Время (тики)},
+	    xmin=100, xmax=1000,
+	    ymin=0, ymax=17000000,
+	    legend pos=north west,
+	    ymajorgrids=true,
+	    grid style=dashed,
+	]
+	 
+	    \addplot[ % без потоков
+	    color=red,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,4781)
+	    (200,33409)
+	    (300,138178)
+	    (400,367130)
+	    (500,735041)
+	    (600,1232386)
+	    (700,2162730)
+	    (800,3244975)
+	    (900,6356393)
+	    (1000,16691459)
+	    };
+	    
+	    \addplot[ % 1
+	    color=blue,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,2404)
+	    (200,20649)
+	    (300,64357)
+	    (400,190105)
+	    (500,403272)
+	    (600,551862)
+	    (700,1016572)
+	    (800,1374125)
+	    (900,2755813)
+	    (1000,5589752)
+	    };
+	    
+	    \addplot[% 2
+	    color=green,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,2978)
+	    (200,20012)
+	    (300,68859)
+	    (400,219520)
+	    (500,410765)
+	    (600,555357)
+	    (700,1013766)
+	    (800,1374663)
+	    (900,2504441)
+	    (1000,6030268)
+	    };
+	    
+	    \addplot[% 4
+	    color=orange,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,2432)
+	    (200,19121)
+	    (300,68708)
+	    (400,202397)
+	    (500,386759)
+	    (600,550942)
+	    (700,1011260)
+	    (800,1739177)
+	    (900,2542511)
+	    (1000,7199299)
+	    };
+	    
+	     \addplot[% 8
+	    color=yellow,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,2463)
+	    (200,20535)
+	    (300,73493)
+	    (400,189244)
+	    (500,366859)
+	    (600,555540)
+	    (700,986169)
+	    (800,1471602)
+	    (900,2516693)
+	    (1000,6740821)
+	    };
+	    
+	     \addplot[% 16
+	    color=cyan,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (100,2852)
+	    (200,18753)
+	    (300,89149)
+	    (400,192061)
+	    (500,351317)
+	    (600,553665)
+	    (700,966833)
+	    (800,1786193)
+	    (900,2497392)
+	    (1000,4800959)
+	    };
+	 
+\addlegendentry{без потоков}
+\addlegendentry{1 поток}
+\addlegendentry{2 потока}
+\addlegendentry{4 потока}
+\addlegendentry{8 потоков}
+\addlegendentry{16 потоков}
+
+	\end{axis}
+	\end{tikzpicture}
+	\caption{График времени работы алгоритмов на матрицах четной размерности}
+	\label{chet}
+	\end{figure}
+
+	\newpage
+	На рис. \ref{nechet} представлен график времени работы алгоритма на матрицах нечетной размерности:
+	
+\begin{figure}[H]
+\begin{tikzpicture}
+\begin{axis}[
+	    xlabel={Размер матрицы},
+	    ylabel={Время (тики)},
+	    xmin=100, xmax=1000,
+	    ymin=0, ymax=12000000,
+	    legend pos=north west,
+	    ymajorgrids=true,
+	    grid style=dashed,
+	]
+	 
+	    \addplot[% без
+	    color=red,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (101,4805)
+	    (201,35143)
+	    (301,147633)
+	    (401,415662)
+	    (501,870189)
+	    (601,1488078)
+	    (701,2618708)
+	    (801,4213106)
+	    (901,11000664)
+	    (1001,13522279)
+	    };
+	    
+	    \addplot[% 1
+	    color=blue,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (101,2366)
+	    (201,17487)
+	    (301,60694)
+	    (401,174381)
+	    (501,341073)
+	    (601,563199)
+	    (701,1020334)
+	    (801,1632571)
+	    (901,3911675)
+	    (1001,4117282)
+	    };
+	    
+	     \addplot[% 2
+	    color=green,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (101,2384)
+	    (201,17278)
+	    (301,60394)
+	    (401,174373)
+	    (501,340029)
+	    (601,655526)
+	    (701,1043438)
+	    (801,1569564)
+	    (901,4027299)
+	    (1001,4130455)
+	    };
+	    
+	    \addplot[% 4
+	    color=orange,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (101,2361)
+	    (201,17358)
+	    (301,60301)
+	    (401,173995)
+	    (501,345253)
+	    (601,631556)
+	    (701,968555)
+	    (801,1623952)
+	    (901,4092417)
+	    (1001,4452478)
+	    };
+	    
+	     \addplot[% 8
+	    color=yellow,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (101,2709)
+	    (201,17215)
+	    (301,60325)
+	    (401,173595)
+	    (501,340308)
+	    (601,601690)
+	    (701,1023598)
+	    (801,1535745)
+	    (901,3045875)
+	    (1001,4676964)
+	    };
+	    
+	     \addplot[% 16
+	    color=cyan,
+	    mark=square,
+	    ]
+	    coordinates {
+	    (101,2364)
+	    (201,17312)
+	    (301,60362)
+	    (401,174254)
+	    (501,347102)
+	    (601,556107)
+	    (701,1005529)
+	    (801,1577165)
+	    (901,3102899)
+	    (1001,4676825)
+	    };
+	 
+\addlegendentry{без потоков}
+\addlegendentry{1 поток}
+\addlegendentry{2 потока}
+\addlegendentry{4 потока}
+\addlegendentry{8 потоков}
+\addlegendentry{16 потоков}
+
+	\end{axis}
+	\end{tikzpicture}
+	\caption{График времени работы алгоритмов на матрицах четной размерности}
+	\label{nechet}
+	\end{figure}
+	
+	\subsection{Вывод}
+	
+	При увеличении количества потоков (до 2, 4, 8, 16), время работы программы существенно сокращается\\
+
+	\newpage
+	\section*{Заключение}
+	
+	\addcontentsline{toc}{section}{Заключение}
+ 
+В ходе работы был изучен параллельный алгоритм умножения матриц: алгоритм Винограда. Выполнено сравнение зависимости всех рассматриваемых алгоритмов от числа параллельных потоков и размера матриц. В ходе исследования было установлено, что многопоточный алгоритм Винограда выполняется быстрее, чем стандартный алгоритм. 
+\newpage
+\addcontentsline{toc}{section}{Список  литературы}
+
+\begin{thebibliography}{}
+    \bibitem{litlink1}  Дж. Макконнелл. Анализ алгоритмов. Активный обучающий подход.-М.:Техносфера, 2009.
+    \bibitem{lev_1} Henry Cohn, Robert Kleinberg, Balazs Szegedy, and Chris Umans. Group-theoretic Algorithms for Matrix Multiplication. arXiv:math.GR/0511460. Proceedings of the 46th Annual Symposium on Foundations of Computer Science, 23-25 October 2005, Pittsburgh, PA, IEEE Computer Society, pp. 379—388.. 
+    \bibitem{lev_2} Don Coppersmith and Shmuel Winograd. Matrix multiplication via arithmetic progressions. Journal of Symbolic Computation, 9:251-280, 1990.
+\end{thebibliography}
+	
+	\newpage
+	\bibliographystyle{alpha}
+	\bibliography{mybib}
+	
+\end{document}

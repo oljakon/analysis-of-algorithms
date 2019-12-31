@@ -1,0 +1,522 @@
+\documentclass[a4paper, 14pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{url}
+\usepackage{tikz}
+\usepackage{float}
+
+\usepackage{titlesec}
+\titleformat*{\section}{\LARGE\bfseries}
+\titleformat*{\subsection}{\Large\bfseries}
+\titleformat*{\subsubsection}{\large\bfseries}
+\titleformat*{\paragraph}{\large\bfseries}
+\titleformat*{\subparagraph}{\large\bfseries}
+
+\lstset{ 
+language=c++,                
+basicstyle=\small\sffamily, 
+numbers=left,  
+numberstyle=\tiny,
+stepnumber=1, 
+numbersep=5pt,
+showspaces=false, 
+showstringspaces=false,
+showtabs=false, 
+frame=single, 
+tabsize=2,  
+captionpos=t, 
+breaklines=true, 
+breakatwhitespace=false, 
+escapeinside={\#*}{*)} 
+}
+
+\begin{document}
+
+\begin{titlepage}
+	\centering
+	{\scshape\Large Лабораторная работа №6\par}
+	{\scshape\Large По курсу: "Анализ алгоритмов"\par}
+	{\scshape\Large По теме: "Муравьиные алгоритмы"\par}
+	\vspace{7cm}
+	\Large Студент: Кондрашова О.П.\par
+	\Large Группа: ИУ7-55Б\par
+	\Large Преподаватели:  Волкова Л.Л., Строганов Ю.В.\par
+
+	\vfill
+	\large \textit {Москва, 2019} \par
+	\end{titlepage}
+	
+	\setcounter{page}{2}
+	\tableofcontents
+	
+	\newpage
+	\section*{Введение}
+	
+	\addcontentsline{toc}{section}{Введение}
+	
+		 Целью данной работы является изучение муравьиного алгоритма для решения задачи коммивояжера, а также приобретение навыка параметризации метода на примере решения задачи коммивояжера методом, основанным на муравьином алгоритме.
+		 
+		 Задачи данной работы:
+	
+\begin{enumerate}
+\item С помощью одного из муравьиных алгоритмов решить задачу коммивояжера;
+\item организовать алгоритм полного перебора и провести сравнитильные анализ муравьиного алгоритма и алгоритма полного перебора;
+\item провести замеры скорости работы работы алгоритма при разных коэффициентах и количестве поколений.
+\end{enumerate}
+
+	\newpage
+\section{Аналитическая часть}
+\hspace{1cm}	В данном разделе приведено описание оригинального муравьиного алгоритма и несколько способов его улучшения
+
+\subsection {Оригинальный муравьиный алгоритм} 
+
+Каждый муравей хранит в памяти список пройденных им узлов. Этот список называют списком запретов  или просто памятью муравья. Выбирая узел для следующего шага, муравей «помнит» об уже пройденных узлах и не рассматривает их в качестве возможных для перехода. На каждом шаге список запретов пополняется новым узлом, а перед новой итерацией алгоритма – то есть перед тем, как муравей вновь проходит путь – он опустошается.
+
+Кроме списка запретов, при выборе узла для перехода муравей руководствуется «привлекательностью» ребер, которые он может пройти. Она зависит, во-первых, от расстояния между узлами (то есть от веса ребра), а во-вторых, от следов феромонов, оставленных на ребре прошедшими по нему ранее муравьями. Естественно, что в отличие от весов ребер, которые являются константными, следы феромонов обновляются на каждой итерации алгоритма: как и в природе, со временем следы испаряются, а проходящие муравьи, напротив, усиливают их.
+
+Пусть муравей находится в узле, а узел  –  это один из узлов, доступных для перехода:  Обозначим вес ребра, соединяющего узлы $i$ и $j$, как  $\tau _{i,j}$, а интенсивность феромона на нем – как $\eta _{i,j}$. Тогда вероятность перехода муравья из $i$ в $j$ будет равна:
+
+\begin{equation}\label{form:way} 
+ P_{i,j}={\frac {(\tau _{i,j}^{\alpha })(\eta _{i,j}^{\beta })}{\sum (\tau _{i,j}^{\alpha })(\eta _{i,j}^{\beta })}}
+ \end{equation}
+ \begin{align*}
+    \text{где} \\
+   \tau _{i,j} &- \text{количество феромонов на ребре ij;} \\
+    \eta _{i,j} &- \text{1/d(ij), где d(ij) - длина ребра ij;} \\
+    \alpha &- \text{коэффициент "стадности";} \\
+    \beta &- \text{коэффициент "жадности".}
+\end{align*}
+
+Заметим, что  $\alpha+\beta=const$. При {$\beta = 0$} алгоритм всегда будет выбирать путь, на котором отложено больше феромона, а при {$\alpha = 0$} алгоритм вырождается в “жадный”, то есть всегда выбирает самое короткое ребро.
+
+Для того, чтобы повысить вариативность выбора (и не выбирать просто максимальную вероятность), можно "подбросить монетку" -  использовать случайное действительное число от 0 до 1. Последовательно суммируя полученные вероятности $P_{i,j}$ пока не получим значение большее или равное случайному числу. Та вероятность, суммирование с которой дало такой результат и будет подходящей, значит муравей выберет город j, для которого была вычислена данная вероятность.
+
+После того, как муравей успешно проходит маршрут, он оставляет на всех пройденных ребрах след, обратно пропорциональный длине пройденного пути:
+\begin{equation}\label{form:eva} 
+    \tau _{i,j}=(1-\rho )\tau _{i,j}+\Delta \tau _{i,j},
+\end{equation}
+\begin{align*}
+    \text{где} \\
+    \rho _{i,j} &- \text{доля феромона, который испарится;} \\
+    \tau _{i,j} &- \text{количество феромона на дуге ij;} \\
+    \Delta \tau _{i,j} &- \text{количество отложенного феромона.}
+\end{align*}
+
+Количество феромона на дуге ij ($ \tau _{i,j}$) обычно определяется как сумма значений $\Delta \tau _{i,j}^k$.
+\begin{equation}\label{form:add} 
+    {\displaystyle \Delta \tau _{i,j}^k={\begin{cases}Q/L_{k}& {\mbox{Если k-ый муравей прошел по ребру ij;}}\\0&{\mbox{Иначе}}\end{cases}}}
+\end{equation}
+\begin{align*}
+    \text{где} \\
+    Q &- \text{нормировочная константа, которая соразмерна длине лучшего пути;} \\
+    L_{k} &- \text{длина пути k-го муравья.}
+\end{align*}
+
+Ниже приведены вариации муравьиного алгоритма.
+\begin{enumerate}
+\item \textbf{Элитарная муравьиная система}.
+Из общего числа муравьёв выделяются так называемые «элитные муравьи». По результатам каждой итерации алгоритма производится усиление лучших маршрутов путём прохода по данным маршрутам элитных муравьёв и, таким образом, увеличение количества феромона на данных маршрутах. В такой системе количество элитных муравьёв является дополнительным параметром, требующим определения. Так, для слишком большого числа элитных муравьёв алгоритм может «застрять» на локальных экстремумах.
+\item \textbf{Max-Min муравьиная система}.
+Добавляются граничные условия на количество феромонов 
+($\tau _{min}, \tau _{max}$). Феромоны откладываются только на глобально лучших или лучших в итерации путях. Все рёбра инициализируются значением $\tau _{max}$.
+\item \textbf{Ранговая муравьиная система(ASrank)}.
+Все решения ранжируются по степени их пригодности. Количество откладываемых феромонов для каждого решения взвешено так, что более подходящие решения получают больше феромонов, чем менее подходящие.
+\item \textbf{Длительная ортогональная колония муравьёв (COAC)}.
+Механизм отложения феромонов COAC позволяет муравьям искать решения совместно и эффективно. Используя ортогональный метод, муравьи в выполнимой области могут исследовать их выбранные области быстро и эффективно, с расширенной способностью глобального поиска и точностью.
+\end{enumerate}
+
+	\subsection{Вывод}
+	Был рассмотрен поверхностно стандартный муравьиный алгоритм и его оптимизации. 
+	
+	\newpage
+	\section{Конструкторская часть}
+	
+	В данной части будет разобран принцип работы алгоритма.
+	
+	\subsection{Разработка реализаций алгоритмов}
+	Основное действие происходит в функции ant\_colony, приведенной в листинге \ref{aco}. На вход ей поступают следующие параметры:
+	\begin{enumerate}
+	 \item  cities\_number - количество городов;
+    \item route - вектор, в который будет записан наилучший маршрут;
+    \item distance - матрица расстояний между городами;
+    \item  alpha -  коэффициент стадности;
+    \item  beta -коэффициент жадности;
+     \item evaporation - процент распыления феромона;
+     \item  Q - величина феромона обычного муравья;
+    \item  t - время жизни колонии.
+    \end{enumerate}
+    
+ Псевдокод работы алгоритма можно представить следующим образом:
+ 
+\begin{enumerate}
+	 \item  Инициализация параметров cities\_number,  alpha, beta, evaporation, Q, elit, elit;
+    \item генерация матрицы расстояний;
+    \item инициализация матрицы феромонов, присвоение начальной концентрации феромона на ребрах;
+    \item  инициализация пустого маршрута и длины начального кратчайшего маршрута length = 0;
+    \item  цикл по времени жизни колонии t;
+     \item инициализация матрицы феромонов для данного поколения муравьев;
+      \item  цикл по муравьям;
+     \item  построить маршрут, используя формула вероятности посещения города (1) и определить его длину;
+      \item обновить феромон на маршруте, используя формулу (3);
+    \item  если полученная длина меньше текущей, примем ее за минимальную;
+    \item  конец цикла по муравьям;
+    \item  вычислить испарение феромона на матрице феромонов;
+     \item  прибавить к общей матрице феромонов матрицу феромонов текущего поколения муравьев;
+     \item конец цикла по времени жизни колонии;
+     \item вернуть длину кратчайшего маршрута.
+    \end{enumerate}
+    
+    \subsection{Схема алгоритма}
+    
+    На рис. \ref{fig:aco} представлена схема муравьиного алгоритма.
+    
+    \begin{figure}[H]
+        	\begin{center}
+        		\includegraphics[scale=0.36]{aco}
+        		\caption{Схема муравьиного алгоритма}
+        		\label{fig:aco}
+        	\end{center}
+        \end{figure}
+	\subsection{Вывод}
+	
+	В данном разделе был кратко описан реализованный муравьиный алгоритм и представлена схема данного алгоритма.
+
+	\newpage
+	\section{Технологическая часть}
+	
+	В этом разделе будут изложены требования к программному обеспечению и листинги алгоритмов.
+	
+	\subsection{Средства реализации}
+	
+		Данная программа разработана на языке C++, поддерживаемом многими операционными системами. Проект выполнен в среде Xcode. 
+	
+\subsection{Листинги функций}
+
+В данном разделе представлены листинги реализованных алгоритмов.
+
+	В листинге \ref{aco} представлен муравьиный алгоритм.
+	
+	В алгоритме используюся реализованные классы CitiesMap и PheromonesMap для работы с матрицей расстояний и матрицей феромона на ребрах.
+
+\begin{lstlisting}[label=aco,caption=Муравьиный алгоритм]
+int ant_colony(const int cities_number, vector<int>& route, const CitiesMap& distance, const double alpha, const double beta, const double Q, const double evaporation, const int max_time)
+{
+    int length = 0;
+    route.clear();
+    
+    PheromonesMap pheromones(cities_number, 10);
+    
+    double coin;
+
+    for (int time = 0; time < max_time; time++)
+    {
+        PheromonesMap ant_pheromones(cities_number, 10);
+        
+        for (int ant = 0; ant < cities_number; ant++)
+        {
+            list<int> unvisited_cities;
+            int next_city = cities_number;
+            int current_len = 0;
+            
+            int current_city = ant;
+    
+            for (int j = 0; j < ant; j++)
+            {
+                unvisited_cities.push_back(j);
+            }
+            for (int j = ant + 1; j < cities_number; j++)
+            {
+                unvisited_cities.push_back(j);
+            }
+            
+            vector<int> visited_cities;
+            visited_cities.push_back(ant);
+            
+            while (unvisited_cities.size() > 0)
+            {
+                double max_probability = 0;
+
+                for (int different_city : unvisited_cities)
+                {
+                    if (distance.get_value(ant, different_city) != 0)
+                    {
+                        double full_probability = 0;
+                        for (int j : unvisited_cities)
+                        {
+                            full_probability += pow(pheromones.get_value(ant, j), alpha) *\
+                                    pow(1.0 / distance.get_value(ant, j), beta);
+                            
+                        }
+                        
+                        double probability = (pow(pheromones.get_value(ant, different_city), alpha) *\
+                                pow(1.0 / distance.get_value(ant, different_city), beta)) / full_probability;
+                        
+                        coin = rand_double();
+                        int best_probability = 0;
+                        double sum_probability = 0;
+                        
+                        for (int s = 0; s < cities_number; s++)
+                        {
+                            sum_probability += probability;
+                            if (sum_probability > coin)
+                            {
+                                max_probability = probability;
+                                next_city = different_city;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                visited_cities.push_back(next_city);
+                unvisited_cities.remove(next_city);
+                current_len += distance.get_value(current_city, next_city);
+                
+                current_city = next_city;
+            }
+
+            int new_len = current_len + distance.get_value(visited_cities.front(), visited_cities.back());
+ 
+            if (new_len < length || length == 0)
+            {
+                length = new_len;
+                route = visited_cities;
+            }
+
+            auto it = visited_cities.cbegin();
+            for (auto it2 = it + 1; it2 != visited_cities.cend(); ++it, ++it2)
+            {
+                ant_pheromones.set_value(*it, *it2, ant_pheromones.get_value(*it, *it2) + Q / current_len);
+            }
+        }
+
+        pheromones *= (1 - evaporation);
+        pheromones += ant_pheromones;
+    }
+    
+    return length;
+}
+
+\end{lstlisting}
+
+	В листинге \ref{pp} представлен алгоритм полного перебора.\\
+	
+Во вложенной функции hamilton проверяются все непосещенные вершины и если такие есть, то эта же функция вызывается рекурсивно для следующих вершин и так пока не будет пройден полноценный маршрут.
+
+\begin{lstlisting}[label=pp,caption=Алгоритм полного перебора]
+int full_search(const CitiesMap& distance)
+{
+    int n = distance.get_cities_number();
+    vector<bool> visited(n, 0);
+    vector<int> current_route;
+    vector<int> min_route;
+    int current_len = 0;
+    int min_route_len = INT_MAX;
+    for (int i = 0; i < n; i++)
+    {
+        current_route.clear();
+        current_route.push_back(i);
+        fill(visited.begin(), visited.end(), 0);
+        visited[i] = 1;
+        current_len = 0;
+        hamilton(distance, min_route, min_route_len, current_route, visited, current_len);
+    }
+    return min_route_len;
+}
+
+void hamilton(const CitiesMap& distance, vector<int> &min_route, int &min_distance, vector<int> &current_route, vector<bool> &visited, int &current_len)
+{
+    if (current_route.size() == distance.get_cities_number())
+    {
+        s++;
+        int tmp = distance.get_value(current_route.back(), current_route[0]);
+        
+        if (current_len + tmp < min_distance)
+        {
+            min_route = current_route;
+            min_distance = current_len + tmp;
+        }
+        
+        return;
+    }
+    for (int i = 0; i < distance.get_cities_number(); i++)
+    {
+        if (!visited[i])
+        {
+            int tmp = distance.get_value(current_route.back(), i);
+            if (current_len + tmp > min_distance)
+                continue;
+            current_len += tmp;
+            current_route.push_back(i);
+            visited[i] = 1;
+            hamilton(distance, min_route, min_distance, current_route, visited, current_len);
+            visited[i] = 0;
+            current_route.pop_back();
+            current_len -= tmp;
+        }
+    }
+}
+
+\end{lstlisting}
+
+	\subsection{Вывод}
+
+В данном разделе были представлены листинги функций муравьиного алгоритма и алгоритма полного перебора.
+
+	\newpage
+	\section{Исследовательская часть}
+	В данном разделе будет проведена параметризация муравьиного алгоритма, а также будет произведен сравнительный анализ муравьиного алгоритма и алгоритма полного перебора.\\
+
+	\subsection{Постановка эксперимента}
+	
+	Для проведения экспериментов была использована рандомно сгенерированная матрица расстояний $10\times10$. Элементы матрицы - целые числа в диапазоне от 1 до 10. В каждом эксперименте фиксировались значения $\alpha, \beta, \rho$ и $t_max$. В течение экспериментов значения $\alpha, \beta, \rho$ менялись от 0 до 1 включительно с шагом 0.1, $t_{max}$ от 10 до 2000 с шагом 10. \\
+
+	
+	\subsection{Сравнительный анализ на материалах эксперимента}
+	
+	В таблице \ref{tab:par} представлены наилучшие результаты, полученные в ходе проведенной параметризации.\\
+	
+		Результатом проведения эксперимента (4 столбец) считалась разница между длиной маршрута, рассчитанного алгоритмом полного перебора, и длиной маршрута, рассчитаной с помощью муравьиного алгоритма с текущими параметрами. 
+	
+\begin{table}[H]
+        \caption{Таблица результатов параметризации}
+            \begin{tabular}{ | c | c | c | c | }
+                \hline
+                 $\rho$  &  $\alpha$  &  $t_{max}$ & difference\\
+                 \hline  
+0.00 & 0.10 &  10 & 0.01556 \\
+0.00 & 0.50 &  10 & 0.01405 \\
+0.00 & 0.60 &  10 & 0.01263 \\
+0.00 & 0.60 &  20 & 0.01556 \\
+0.00 & 0.70 &  10 & 0.01263 \\
+0.00 & 0.70 &  20 & 0.0156 \\
+0.00 & 0.70 &  30 & 0.01556 \\
+0.00 & 0.70 &  40 & 0.01405 \\
+0.00 & 0.70 &  50 & 0.01556 \\
+0.00 & 0.80 &  10 & 0.01263 \\
+0.00 & 0.90 & 200 & 0.01263 \\
+0.10 & 0.40 &  60 & 0.01556 \\
+0.10 & 0.80 &  10 & 0.01263 \\
+0.20 & 0.60 &  30 & 0.01263 \\
+0.20 & 0.70 &  40 & 0.01263 \\
+0.20 & 0.70 &  50 & 0.01556 \\
+0.20 & 0.80 &  10 & 0.01263 \\
+0.40 & 0.80 & 170 & 0.01263 \\
+0.40 & 0.80 & 180 & 0.01405 \\
+0.40 & 0.80 & 200 & 0.01263 \\
+0.60 & 0.90 & 200 & 0.01263 \\
+0.70 & 0.80 &  10 & 0.01263 \\
+0.70 & 0.90 & 200 & 0.01263 \\
+0.80 & 0.50 &  10 & 0.01263 \\
+0.80 & 0.60 &  10 & 0.01263 \\
+0.80 & 0.60 &  20 & 0.01556 \\
+0.80 & 0.70 & 200 & 0.01556 \\
+0.80 & 0.80 &  10 & 0.01263 \\
+0.80 & 0.80 & 180 & 0.01263 \\
+0.80 & 0.80 & 200 & 0.01405 \\
+0.80 & 0.90 &  10 & 0.01263 \\
+0.80 & 0.90 & 200 & 0.01263 \\
+0.90 & 0.40 &  20 & 0.01556 \\
+0.90 & 0.40 & 120 & 0.01556 \\
+0.90 & 0.50 &  10 & 0.01263 \\
+0.90 & 0.60 &  10 & 0.01556 \\
+0.90 & 0.60 & 200 & 0.01556 \\
+0.90 & 0.70 &  20 & 0.01263 \\
+0.90 & 0.70 &  30 & 0.01556 \\
+0.90 & 0.70 & 200 & 0.01556 \\
+0.90 & 0.80 &  10 & 0.01263 \\
+0.90 & 0.90 & 200 & 0.01263 \\
+                \hline
+            \end{tabular}
+        \label{tab:par}
+    \end{table} 
+    
+    Как видно из таблицы \ref{tab:par}, наиболее точное значение чаще всего получается при возрастания параметра $\alpha$, но при этом $\rho$  и $t_{max}$ могут принимать любые значения в указанном диапазоне.
+    
+   \newpage
+	\subsection{Анализ по времени}
+	
+	Проведем сравнительный анализ по времени алгоритма полного перебора и муравьиного алгоритма на матрицах различной размерности от 2 до 10.
+	
+\begin{figure}[H]
+\begin{tikzpicture}
+\begin{axis}[
+	    xlabel={Размер матрицы},
+	    ylabel={Время (секунды)},
+	    xmin=2, xmax=10,
+	    ymin=0, ymax=122186,
+	    legend pos=north west,
+	    ymajorgrids=true,
+	    grid style=dashed,
+	]
+	 
+	    \addplot[
+	    color=red,
+	    mark=square,
+	    ]
+	    coordinates {
+(2,3)
+(3,6)
+(4,34)
+(5,640)
+(6,1504)
+(7,1231)
+(8,8333)
+(9,45491)
+(10,122186)
+	    };
+	    
+	     \addplot[
+	    color=blue,
+	    mark=square,
+	    ]
+	    coordinates {
+(2,4)
+(3,5)
+(4,24)
+(5,75)
+(6,261)
+(7,811)
+(8,5822)
+(9,13087)
+(10,29454)
+	    };
+	 
+\addlegendentry{полный перебор}
+\addlegendentry{муравьиный алгоритм}
+
+	\end{axis}
+	\end{tikzpicture}
+	\caption{График времени работы алгоритмов}
+	\label{gr}
+	\end{figure}
+	
+	Как видно из графика на рис. \ref{gr}, на матрицах маленькой размерности алгоритмы работают примерно одинаково, но при возрастании размерности матрицы, время выполнения полного перебора начинает расти быстрее времени выполнения муравьиного алгоритма. 
+	
+	\subsection{Вывод}
+	
+	Муравьиный алгоритм выигрывает по времени у алгоритма полного перебора при возрастании размерностей матрицы.
+
+	\newpage
+	\section*{Заключение}
+	
+	\addcontentsline{toc}{section}{Заключение}
+	
+	В ходе работы был изучаен и реализован муравьиный алгоритм с введением элитных муравьей. Были получены наиболее оптимальные параметры для быстрого и правильного решения задачи коммивояжера на матрице из десяти городов.
+	
+\addcontentsline{toc}{section}{Список использованной литературы}
+	
+\newpage
+\begin{thebibliography}{}
+
+\bibitem{ant_habr} Штовба С. Д. Муравьиные алгоритмы, Exponenta Pro. Математика в приложениях. 2004
+    
+\bibitem{ant_habr} Формулы выбора города, обновления феромонов https://habr.com/post/105302/
+
+\end{thebibliography}
+\end{document}

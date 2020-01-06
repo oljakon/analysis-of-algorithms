@@ -16,7 +16,7 @@ struct object_type
     int index;
     int itemindex;
     time_t time;
-    string str = " time is ";
+    string str;
 };
 
 vector<object_type> input_objects, output_objects;
